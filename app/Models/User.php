@@ -96,6 +96,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'website'                 => 'url|nullable|max:191',
         'manager_id'              => 'nullable|exists:users,id|cant_manage_self',
         'location_id'             => 'exists:locations,id|nullable|fmcs_location',
+        'company_id'              => 'nullable|exists:companies,id|fmcs_validator',
         'start_date'              => 'nullable|date_format:Y-m-d',
         'end_date'                => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
         'autoassign_licenses'     => 'boolean',
@@ -506,6 +507,32 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     public function groups()
     {
         return $this->belongsToMany(\App\Models\Group::class, 'users_groups');
+    }
+
+    /**
+     * Establishes the user -> companies relationship for FullMultipleCompanySupport
+     *
+     * @author T. Regnery <tobias.regnery@gmail.com>
+     * @since [vX.X]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function companies()
+    {
+        return $this->belongsToMany('\App\Models\Company', 'companies_users_fmcs');
+    }
+
+    /**
+     * Returns the combined company_ids from the users "primary" company and the FullMultipleCompanySupport mapping table
+     *
+     * @author T. Regnery <tobias.regnery@gmail.com>
+     * @since [vX.X]
+     * @return Illuminate\Support\Collection
+     */
+    public function company_ids()
+    {
+        $company_ids = $this->companies()->pluck('company_id');
+        $company_ids->push($this->company_id);
+        return $company_ids;
     }
 
     /**
