@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\CustomField;
 use App\Models\Department;
 use App\Models\Setting;
+use App\Models\Company;
+use Auth;
 use DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
@@ -347,6 +349,20 @@ class ValidationServiceProvider extends ServiceProvider
             $options = $field->formatFieldValuesAsArray();
 
             return in_array($value, $options);
+        });
+
+        // Validates if the user has the permission to choose the specified company in case of FullMultipleCompanySupport
+        Validator::extendImplicit('fmcs_validator', function ($attribute, $value, $parameters, $validator) {
+            $current_user = Auth::user();
+            if (!Company::isFullMultipleCompanySupportEnabled() || $current_user->isSuperUser() || $current_user->company_id == null) {
+                return true;
+            }
+
+            if ($value != null && $current_user->company_ids()->contains($value)) {
+                return true;
+            } else {
+                return false;
+            }
         });
     }
 
