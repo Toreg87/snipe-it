@@ -14,6 +14,7 @@ use App\Http\Transformers\UsersTransformer;
 use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Accessory;
+use App\Models\Company;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\User;
@@ -459,6 +460,13 @@ class UsersController extends Controller
             if ($request->filled('password')) {
                 $user->password = bcrypt($request->input('password'));
             }
+
+            // Remove the new company from the fmcs mapping table
+            if ($request->filled('company_id')
+                && Company::isFullMultipleCompanySupportEnabled()
+                && $user->companies()->get()->contains($request->input('company_id'))) {
+                    $user->companies()->detach($request->input('company_id'));
+                }
 
             // We need to use has()  instead of filled()
             // here because we need to overwrite permissions
