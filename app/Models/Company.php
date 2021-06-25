@@ -71,7 +71,7 @@ final class Company extends SnipeModel
         'notes',
     ];
 
-    private static function isFullMultipleCompanySupportEnabled()
+    public static function isFullMultipleCompanySupportEnabled()
     {
         $settings = Setting::getSettings();
 
@@ -105,21 +105,12 @@ final class Company extends SnipeModel
      */
     public static function getIdForCurrentUser($unescaped_input)
     {
-        if (! static::isFullMultipleCompanySupportEnabled()) {
-            return static::getIdFromInput($unescaped_input);
+        $current_user = auth()->user();
+        $input = static::getIdFromInput($unescaped_input);
+        if (static::canManageUsersCompanies()) {
+            return $input;
         } else {
-            $current_user = auth()->user();
-
-            // Super users should be able to set a company to whatever they need
-            if ($current_user->isSuperUser()) {
-                return static::getIdFromInput($unescaped_input);
-            } else {
-                if ($current_user->company_id != null) {
-                    return $current_user->company_id;
-                } else {
-                    return null;
-                }
-            }
+            return $current_user->company_id;
         }
     }
 
@@ -161,9 +152,12 @@ final class Company extends SnipeModel
 
         if (auth()->user()) {
             // Log::warning('Companyable is '.$companyable);
-            $current_user_company_id = auth()->user()->company_id;
+            $current_user = auth()->user();
             $companyable_company_id = $companyable->company_id;
-            return $current_user_company_id == null || $current_user_company_id == $companyable_company_id || auth()->user()->isSuperUser();
+
+            return ($current_user->company_id == null
+                    || $current_user->company_ids()->contains($companyable_company_id)
+                    || $current_user->isSuperUser());
         }
 
     }
@@ -175,8 +169,11 @@ final class Company extends SnipeModel
 
     public static function canManageUsersCompanies()
     {
-        return ! static::isFullMultipleCompanySupportEnabled() || auth()->user()->isSuperUser() ||
-                auth()->user()->company_id == null;
+        $current_user = auth()->user();
+        return (!static::isFullMultipleCompanySupportEnabled()
+                || $current_user->isSuperUser()
+                || $current_user->company_id == null
+                || $current_user->company_ids()->count() > 1);
     }
 
     /**
@@ -294,7 +291,11 @@ final class Company extends SnipeModel
             // Dynamically get the table name if it's not passed in, based on the model we're querying against
             $table = ($table_name) ? $table_name."." : $query->getModel()->getTable().".";
 
-            return $query->where($table.$column, '=', $company_id);
+            if ($company_id != null) {
+                return $query->whereIn($table.$column, auth()->user()->company_ids());
+            } else {
+                return $query->where($table.$column, '=', null);
+            }
         }
 
     }

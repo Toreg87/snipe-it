@@ -79,6 +79,9 @@
         <ul class="nav nav-tabs">
           <li class="active"><a href="#info" data-toggle="tab">{{ trans('general.information') }} </a></li>
           <li><a href="#permissions" data-toggle="tab">{{ trans('general.permissions') }} </a></li>
+          @if($fmcs)
+            <li><a href="#tab_3" data-toggle="tab">{{ trans('general.company_mappings') }}</a></li>
+          @endif
         </ul>
 
         <div class="tab-content">
@@ -594,6 +597,28 @@
                 @include('partials.forms.edit.permissions-base')
             </table>
           </div><!-- /.tab-pane -->
+
+          <!-- Company Mappings Tab-->
+          @if($fmcs)
+          <div class="tab-pane" id="tab_3">
+          <div class="col-md-12">
+              @if (!Auth::user()->isSuperUser())
+                <p class="alert alert-warning"> {{ trans('general.company_mapping_warn') }}</p>
+              @endif
+            </div>
+
+            <table class="table table-striped company-mappings-fmcs">
+              <thead>
+                <tr class="company-mappings-fmcs-row">
+                  <th class="col-md-8">{{ trans('general.company') }}</th>
+                  <th class="col-md-1">{{ trans('general.mapped') }}</th>
+                </tr>
+              </thead>
+                @include('partials.forms.edit.company-mappings-fmcs')
+            </table>
+          </div><!-- /.tab-pane -->
+          @endif
+
         </div><!-- /.tab-content -->
           <x-redirect_submit_options
                   index_route="users.index"

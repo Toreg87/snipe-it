@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class CompaniesController extends Controller
 {
@@ -181,12 +182,13 @@ class CompaniesController extends Controller
     public function selectlist(Request $request) : array
     {
         $this->authorize('view.selectlists');
-        $companies = Company::select([
-            'companies.id',
-            'companies.name',
-            'companies.email',
-            'companies.image',
-        ]);
+        // Show only own and mapped companies if full multiple company support is enabled and user is no super user
+        $current_user = auth()->user();
+        if (Company::isFullMultipleCompanySupportEnabled() && !$current_user->isSuperUser() && $current_user->company_id != null) {
+            $companies = Company::select(['companies.id','companies.name','companies.email','companies.image',])->whereIn('companies.id', $current_user->company_ids());
+        } else {
+            $companies = Company::select(['companies.id','companies.name','companies.email','companies.image',]);
+        }
 
         if ($request->filled('search')) {
             $companies = $companies->where('companies.name', 'LIKE', '%'.$request->get('search').'%');
