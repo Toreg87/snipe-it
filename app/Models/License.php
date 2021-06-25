@@ -50,7 +50,7 @@ class License extends Depreciable
         'license_name'   => 'string|nullable|max:100',
         'notes'   => 'string|nullable',
         'category_id' => 'required|exists:categories,id',
-        'company_id' => 'integer|nullable',
+        'company_id' => 'integer|nullable|fmcs_validator',
     );
 
    /**
