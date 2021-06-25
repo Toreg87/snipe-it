@@ -28,7 +28,7 @@ class Department extends SnipeModel
     protected $rules = [
         'name'                  => 'required|max:255',
         'location_id'           => 'numeric|nullable',
-        'company_id'            => 'numeric|nullable',
+        'company_id'            => 'numeric|nullable|fmcs_validator',
         'manager_id'            => 'numeric|nullable',
     ];
 
